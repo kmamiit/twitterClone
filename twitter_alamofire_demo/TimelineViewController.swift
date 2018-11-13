@@ -8,7 +8,7 @@
 
 import UIKit
 
-class TimelineViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class TimelineViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, ComposeViewControllerDelegate {
 
     var tweets: [Tweet] = []
     var refreshControl: UIRefreshControl!
@@ -33,6 +33,18 @@ class TimelineViewController: UIViewController, UITableViewDelegate, UITableView
         fetchTweets()
     }
 
+    func did(post: Tweet) {
+        APIManager.shared.getHomeTimeLine { (tweets, error) in
+            if let tweets = tweets {
+                self.tweets = tweets
+                self.tableView.reloadData()
+                self.refreshControl.endRefreshing()
+            } else if let error = error {
+                print("Error getting home timeline: " + error.localizedDescription)
+            }
+        }
+    }
+    
     @objc func didPullToRefresh(_ refreshControl: UIRefreshControl){
         fetchTweets()
     }
@@ -55,6 +67,8 @@ class TimelineViewController: UIViewController, UITableViewDelegate, UITableView
         APIManager.logout() // logout is static
     }
     
+    
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return tweets.count
     }
@@ -73,6 +87,27 @@ class TimelineViewController: UIViewController, UITableViewDelegate, UITableView
         // Dispose of any resources that can be recreated.
     }
     
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        print("1")
+        if segue.identifier == "detailedTweetSegue" {
+            print("2")
+            let cell = sender as! UITableViewCell
+            if let indexPath = tableView.indexPath(for: cell) {
+                let tweet = tweets[indexPath.row]
+                let detailedViewController = segue.destination as! DetailedViewController
+                detailedViewController.tweet = tweet;
+            }
+        }
+        else if segue.identifier == "composeTweetSegue" {
+            print("3")
+            let composeViewController = segue.destination as! ComposeViewController
+            composeViewController.delegate = self;
+            present(composeViewController, animated: true, completion: nil)
+        } else {
+            print(segue.identifier)
+            print("4")
+        }
+    }
 
     /*
     // MARK: - Navigation
